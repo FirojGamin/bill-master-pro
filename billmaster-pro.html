@@ -1,0 +1,1898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BillMaster Pro - Professional Billing System</title>
+    <meta name="description" content="Complete multi-purpose billing system supporting travel, transport, retail, GST, service, product, and utility billing with customizable templates">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Alpine.js for reactivity -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Chart.js for analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- jsPDF for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
+    <style>
+        :root {
+            --primary: #1d4ed8;
+            --primary-foreground: #ffffff;
+            --secondary: #f1f5f9;
+            --secondary-foreground: #0f172a;
+            --muted: #f8fafc;
+            --muted-foreground: #64748b;
+            --accent: #f1f5f9;
+            --accent-foreground: #0f172a;
+            --destructive: #dc2626;
+            --destructive-foreground: #ffffff;
+            --border: #e2e8f0;
+            --input: #e2e8f0;
+            --ring: #1d4ed8;
+        }
+
+        .dark {
+            --primary: #3b82f6;
+            --primary-foreground: #ffffff;
+            --secondary: #1e293b;
+            --secondary-foreground: #f8fafc;
+            --muted: #0f172a;
+            --muted-foreground: #94a3b8;
+            --accent: #1e293b;
+            --accent-foreground: #f8fafc;
+            --destructive: #dc2626;
+            --destructive-foreground: #ffffff;
+            --border: #334155;
+            --input: #334155;
+            --ring: #3b82f6;
+        }
+
+        * {
+            border-color: var(--border);
+        }
+
+        body {
+            background-color: var(--muted);
+            color: var(--secondary-foreground);
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: var(--primary-foreground);
+            border: 1px solid var(--primary);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary);
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary);
+            color: var(--secondary-foreground);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--accent);
+        }
+
+        .card {
+            background-color: white;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .dark .card {
+            background-color: #1e293b;
+            border-color: var(--border);
+        }
+
+        .input {
+            background-color: white;
+            border: 1px solid var(--input);
+            border-radius: 0.375rem;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .dark .input {
+            background-color: #1e293b;
+            border-color: var(--input);
+            color: var(--secondary-foreground);
+        }
+
+        .sidebar-active {
+            background-color: var(--primary);
+            color: var(--primary-foreground);
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .sidebar-link:hover {
+            background-color: var(--accent);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 50;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .dark .modal-content {
+            background-color: #1e293b;
+        }
+
+        .stats-card {
+            background: linear-gradient(135deg, var(--primary), #3b82f6);
+            color: white;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+        }
+
+        .billing-type-card {
+            border: 2px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .billing-type-card:hover {
+            border-color: var(--primary);
+            background-color: var(--accent);
+        }
+
+        .billing-type-card.selected {
+            border-color: var(--primary);
+            background-color: var(--accent);
+        }
+
+        .toast {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background-color: var(--primary);
+            color: var(--primary-foreground);
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            display: none;
+            z-index: 100;
+        }
+
+        .toast.success {
+            background-color: #10b981;
+        }
+
+        .toast.error {
+            background-color: var(--destructive);
+        }
+
+        .toast.active {
+            display: block;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th,
+        .table td {
+            border-bottom: 1px solid var(--border);
+            padding: 0.75rem;
+            text-align: left;
+        }
+
+        .table th {
+            font-weight: 600;
+            background-color: var(--muted);
+        }
+
+        .dark .table th {
+            background-color: #0f172a;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-draft {
+            background-color: #fbbf24;
+            color: #92400e;
+        }
+
+        .badge-sent {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .badge-paid {
+            background-color: #10b981;
+            color: white;
+        }
+
+        .badge-overdue {
+            background-color: #dc2626;
+            color: white;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--secondary-foreground);
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--input);
+            border-radius: 0.375rem;
+            background-color: white;
+            font-size: 0.875rem;
+        }
+
+        .dark .form-select {
+            background-color: #1e293b;
+            border-color: var(--input);
+            color: var(--secondary-foreground);
+        }
+
+        .invoice-item {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
+            gap: 1rem;
+            align-items: center;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .section-hidden {
+            display: none;
+        }
+
+        .section-active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .invoice-item {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body x-data="billMaster()" x-init="init()">
+    <!-- Toast Notifications -->
+    <div id="toast" class="toast">
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- Mobile Menu Button -->
+    <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-lg">
+        <i data-lucide="menu" class="w-5 h-5"></i>
+    </button>
+
+    <!-- Sidebar -->
+    <div class="sidebar fixed inset-y-0 left-0 w-64 bg-white shadow-lg transform transition-transform duration-300 z-40"
+         :class="{'mobile-open': sidebarOpen}">
+        <div class="p-6">
+            <div class="flex items-center space-x-3 mb-8">
+                <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <i data-lucide="receipt" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-900">BillMaster Pro</h1>
+                    <p class="text-sm text-gray-500">Professional Billing</p>
+                </div>
+            </div>
+
+            <nav class="space-y-2">
+                <a @click="setActiveSection('dashboard')" 
+                   class="sidebar-link" 
+                   :class="{'sidebar-active': activeSection === 'dashboard'}">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i>
+                    Dashboard
+                </a>
+                <a @click="setActiveSection('clients')" 
+                   class="sidebar-link" 
+                   :class="{'sidebar-active': activeSection === 'clients'}">
+                    <i data-lucide="users" class="w-5 h-5 mr-3"></i>
+                    Clients
+                </a>
+                <a @click="setActiveSection('products')" 
+                   class="sidebar-link" 
+                   :class="{'sidebar-active': activeSection === 'products'}">
+                    <i data-lucide="package" class="w-5 h-5 mr-3"></i>
+                    Products
+                </a>
+                <a @click="setActiveSection('invoices')" 
+                   class="sidebar-link" 
+                   :class="{'sidebar-active': activeSection === 'invoices'}">
+                    <i data-lucide="file-text" class="w-5 h-5 mr-3"></i>
+                    Invoices
+                </a>
+                <a @click="setActiveSection('invoice-create')" 
+                   class="sidebar-link" 
+                   :class="{'sidebar-active': activeSection === 'invoice-create'}">
+                    <i data-lucide="plus-circle" class="w-5 h-5 mr-3"></i>
+                    Create Invoice
+                </a>
+                <a @click="setActiveSection('expenses')" 
+                   class="sidebar-link" 
+                   :class="{'sidebar-active': activeSection === 'expenses'}">
+                    <i data-lucide="credit-card" class="w-5 h-5 mr-3"></i>
+                    Expenses
+                </a>
+                <a @click="setActiveSection('analytics')" 
+                   class="sidebar-link" 
+                   :class="{'sidebar-active': activeSection === 'analytics'}">
+                    <i data-lucide="bar-chart-3" class="w-5 h-5 mr-3"></i>
+                    Analytics
+                </a>
+                <a @click="setActiveSection('settings')" 
+                   class="sidebar-link" 
+                   :class="{'sidebar-active': activeSection === 'settings'}">
+                    <i data-lucide="settings" class="w-5 h-5 mr-3"></i>
+                    Settings
+                </a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content ml-64 min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900" x-text="getSectionTitle()"></h2>
+                    <p class="text-sm text-gray-500">Manage your billing operations</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button @click="toggleDarkMode()" class="p-2 rounded-lg hover:bg-gray-100">
+                        <i data-lucide="moon" class="w-5 h-5"></i>
+                    </button>
+                    <div class="text-sm text-gray-500">
+                        <span x-text="new Date().toLocaleDateString()"></span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Section -->
+        <div id="dashboard" class="p-6" :class="activeSection === 'dashboard' ? 'section-active' : 'section-hidden'">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="stats-card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-blue-100 text-sm">Total Revenue</p>
+                            <p class="text-2xl font-bold" x-text="formatCurrency(stats.totalRevenue)"></p>
+                        </div>
+                        <i data-lucide="dollar-sign" class="w-8 h-8 text-blue-200"></i>
+                    </div>
+                </div>
+                <div class="stats-card bg-gradient-to-r from-green-500 to-green-600">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-green-100 text-sm">Total Invoices</p>
+                            <p class="text-2xl font-bold" x-text="stats.totalInvoices"></p>
+                        </div>
+                        <i data-lucide="file-text" class="w-8 h-8 text-green-200"></i>
+                    </div>
+                </div>
+                <div class="stats-card bg-gradient-to-r from-yellow-500 to-yellow-600">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-yellow-100 text-sm">Pending Payments</p>
+                            <p class="text-2xl font-bold" x-text="formatCurrency(stats.pendingPayments)"></p>
+                        </div>
+                        <i data-lucide="clock" class="w-8 h-8 text-yellow-200"></i>
+                    </div>
+                </div>
+                <div class="stats-card bg-gradient-to-r from-purple-500 to-purple-600">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-purple-100 text-sm">Total Clients</p>
+                            <p class="text-2xl font-bold" x-text="stats.totalClients"></p>
+                        </div>
+                        <i data-lucide="users" class="w-8 h-8 text-purple-200"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold mb-4">Recent Invoices</h3>
+                    <div class="space-y-3">
+                        <template x-for="invoice in stats.recentInvoices" :key="invoice.id">
+                            <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                                <div>
+                                    <p class="font-medium" x-text="invoice.invoiceNumber"></p>
+                                    <p class="text-sm text-gray-500" x-text="invoice.client?.name || 'Unknown Client'"></p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-semibold" x-text="formatCurrency(invoice.total)"></p>
+                                    <span class="badge" :class="getBadgeClass(invoice.status)" x-text="invoice.status"></span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold mb-4">Billing Type Distribution</h3>
+                    <canvas id="billingChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Clients Section -->
+        <div id="clients" class="p-6" :class="activeSection === 'clients' ? 'section-active' : 'section-hidden'">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <i data-lucide="search" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
+                        <input 
+                            type="text" 
+                            placeholder="Search clients..." 
+                            class="input pl-10 w-64"
+                            x-model="clientSearch"
+                        >
+                    </div>
+                </div>
+                <button @click="openClientModal()" class="btn-primary px-4 py-2 rounded-lg flex items-center space-x-2">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    <span>Add Client</span>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <template x-for="client in filteredClients" :key="client.id">
+                    <div class="card p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold" x-text="client.name"></h3>
+                            <div class="flex space-x-2">
+                                <button @click="editClient(client)" class="p-2 hover:bg-gray-100 rounded">
+                                    <i data-lucide="edit" class="w-4 h-4"></i>
+                                </button>
+                                <button @click="deleteClient(client.id)" class="p-2 hover:bg-gray-100 rounded text-red-500">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="mail" class="w-4 h-4 text-gray-400"></i>
+                                <span x-text="client.email"></span>
+                            </div>
+                            <div class="flex items-center space-x-2" x-show="client.phone">
+                                <i data-lucide="phone" class="w-4 h-4 text-gray-400"></i>
+                                <span x-text="client.phone"></span>
+                            </div>
+                            <div class="flex items-center space-x-2" x-show="client.gstNumber">
+                                <i data-lucide="file-text" class="w-4 h-4 text-gray-400"></i>
+                                <span x-text="client.gstNumber"></span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <div x-show="filteredClients.length === 0" class="text-center py-12">
+                <i data-lucide="users" class="w-16 h-16 text-gray-400 mx-auto mb-4"></i>
+                <h3 class="text-lg font-semibold text-gray-600 mb-2">No clients found</h3>
+                <p class="text-gray-500">Get started by adding your first client</p>
+            </div>
+        </div>
+
+        <!-- Products Section -->
+        <div id="products" class="p-6" :class="activeSection === 'products' ? 'section-active' : 'section-hidden'">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <i data-lucide="search" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
+                        <input 
+                            type="text" 
+                            placeholder="Search products..." 
+                            class="input pl-10 w-64"
+                            x-model="productSearch"
+                        >
+                    </div>
+                </div>
+                <button @click="openProductModal()" class="btn-primary px-4 py-2 rounded-lg flex items-center space-x-2">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    <span>Add Product</span>
+                </button>
+            </div>
+
+            <div class="card overflow-hidden">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Stock</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="product in filteredProducts" :key="product.id">
+                            <tr>
+                                <td>
+                                    <div>
+                                        <div class="font-medium" x-text="product.name"></div>
+                                        <div class="text-sm text-gray-500" x-text="product.description"></div>
+                                    </div>
+                                </td>
+                                <td x-text="product.category"></td>
+                                <td x-text="formatCurrency(product.price)"></td>
+                                <td>
+                                    <span x-show="product.isService" class="badge bg-blue-100 text-blue-800">Service</span>
+                                    <span x-show="!product.isService" x-text="product.stock + ' ' + product.unit"></span>
+                                </td>
+                                <td>
+                                    <div class="flex space-x-2">
+                                        <button @click="editProduct(product)" class="p-1 hover:bg-gray-100 rounded">
+                                            <i data-lucide="edit" class="w-4 h-4"></i>
+                                        </button>
+                                        <button @click="deleteProduct(product.id)" class="p-1 hover:bg-gray-100 rounded text-red-500">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Invoices Section -->
+        <div id="invoices" class="p-6" :class="activeSection === 'invoices' ? 'section-active' : 'section-hidden'">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <i data-lucide="search" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
+                        <input 
+                            type="text" 
+                            placeholder="Search invoices..." 
+                            class="input pl-10 w-64"
+                            x-model="invoiceSearch"
+                        >
+                    </div>
+                    <select class="form-select w-32" x-model="invoiceStatusFilter">
+                        <option value="">All Status</option>
+                        <option value="draft">Draft</option>
+                        <option value="sent">Sent</option>
+                        <option value="paid">Paid</option>
+                        <option value="overdue">Overdue</option>
+                    </select>
+                </div>
+                <button @click="setActiveSection('invoice-create')" class="btn-primary px-4 py-2 rounded-lg flex items-center space-x-2">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    <span>Create Invoice</span>
+                </button>
+            </div>
+
+            <div class="card overflow-hidden">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Invoice #</th>
+                            <th>Client</th>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="invoice in filteredInvoices" :key="invoice.id">
+                            <tr>
+                                <td>
+                                    <div class="font-medium" x-text="invoice.invoiceNumber"></div>
+                                    <div class="text-sm text-gray-500" x-text="invoice.billingType"></div>
+                                </td>
+                                <td x-text="invoice.client?.name || 'Unknown Client'"></td>
+                                <td x-text="formatDate(invoice.invoiceDate)"></td>
+                                <td x-text="formatCurrency(invoice.total)"></td>
+                                <td>
+                                    <span class="badge" :class="getBadgeClass(invoice.status)" x-text="invoice.status"></span>
+                                </td>
+                                <td>
+                                    <div class="flex space-x-2">
+                                        <button @click="viewInvoice(invoice)" class="p-1 hover:bg-gray-100 rounded">
+                                            <i data-lucide="eye" class="w-4 h-4"></i>
+                                        </button>
+                                        <button @click="downloadInvoicePDF(invoice)" class="p-1 hover:bg-gray-100 rounded">
+                                            <i data-lucide="download" class="w-4 h-4"></i>
+                                        </button>
+                                        <button @click="deleteInvoice(invoice.id)" class="p-1 hover:bg-gray-100 rounded text-red-500">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Create Invoice Section -->
+        <div id="invoice-create" class="p-6" :class="activeSection === 'invoice-create' ? 'section-active' : 'section-hidden'">
+            <div class="max-w-4xl mx-auto">
+                <h3 class="text-xl font-semibold mb-6">Create New Invoice</h3>
+                
+                <!-- Billing Type Selection -->
+                <div class="card p-6 mb-6">
+                    <h4 class="text-lg font-medium mb-4">Select Billing Type</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <template x-for="type in billingTypes" :key="type.id">
+                            <div class="billing-type-card" 
+                                 :class="{'selected': invoiceForm.billingType === type.id}"
+                                 @click="selectBillingType(type.id)">
+                                <div class="text-center">
+                                    <i :data-lucide="type.icon" class="w-8 h-8 mx-auto mb-2"></i>
+                                    <h5 class="font-medium" x-text="type.name"></h5>
+                                    <p class="text-sm text-gray-500" x-text="type.description"></p>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Invoice Form -->
+                <form @submit.prevent="createInvoice()">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="card p-6">
+                            <h4 class="text-lg font-medium mb-4">Invoice Details</h4>
+                            <div class="space-y-4">
+                                <div class="form-group">
+                                    <label class="form-label">Invoice Number</label>
+                                    <input type="text" class="input w-full" x-model="invoiceForm.invoiceNumber" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Client</label>
+                                    <select class="form-select w-full" x-model="invoiceForm.clientId" required>
+                                        <option value="">Select Client</option>
+                                        <template x-for="client in clients" :key="client.id">
+                                            <option :value="client.id" x-text="client.name"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Invoice Date</label>
+                                    <input type="date" class="input w-full" x-model="invoiceForm.invoiceDate" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Due Date</label>
+                                    <input type="date" class="input w-full" x-model="invoiceForm.dueDate" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card p-6">
+                            <h4 class="text-lg font-medium mb-4">Payment Terms</h4>
+                            <div class="space-y-4">
+                                <div class="form-group">
+                                    <label class="form-label">Payment Terms</label>
+                                    <select class="form-select w-full" x-model="invoiceForm.paymentTerms">
+                                        <option value="30 days">Net 30 Days</option>
+                                        <option value="15 days">Net 15 Days</option>
+                                        <option value="Due on Receipt">Due on Receipt</option>
+                                        <option value="Cash on Delivery">Cash on Delivery</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Currency</label>
+                                    <select class="form-select w-full" x-model="invoiceForm.currency">
+                                        <option value="INR">INR (₹)</option>
+                                        <option value="USD">USD ($)</option>
+                                        <option value="EUR">EUR (€)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Notes</label>
+                                    <textarea class="input w-full" rows="3" x-model="invoiceForm.notes"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Invoice Items -->
+                    <div class="card p-6 mb-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-lg font-medium">Invoice Items</h4>
+                            <button type="button" @click="addInvoiceItem()" class="btn-primary px-4 py-2 rounded-lg">
+                                Add Item
+                            </button>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <template x-for="(item, index) in invoiceForm.items" :key="index">
+                                <div class="invoice-item">
+                                    <div>
+                                        <input type="text" placeholder="Description" class="input w-full" x-model="item.description">
+                                    </div>
+                                    <div>
+                                        <input type="number" placeholder="Qty" class="input w-full" x-model="item.quantity" @input="calculateItemTotal(index)">
+                                    </div>
+                                    <div>
+                                        <input type="number" placeholder="Rate" class="input w-full" x-model="item.rate" @input="calculateItemTotal(index)">
+                                    </div>
+                                    <div>
+                                        <input type="number" placeholder="Tax %" class="input w-full" x-model="item.taxRate" @input="calculateItemTotal(index)">
+                                    </div>
+                                    <div>
+                                        <input type="number" placeholder="Amount" class="input w-full" x-model="item.amount" readonly>
+                                    </div>
+                                    <div>
+                                        <button type="button" @click="removeInvoiceItem(index)" class="p-2 text-red-500 hover:bg-red-50 rounded">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+
+                        <!-- Invoice Totals -->
+                        <div class="mt-6 bg-gray-50 p-4 rounded-lg">
+                            <div class="flex justify-between items-center mb-2">
+                                <span>Subtotal:</span>
+                                <span x-text="formatCurrency(invoiceForm.subtotal)"></span>
+                            </div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span>Tax Amount:</span>
+                                <span x-text="formatCurrency(invoiceForm.taxAmount)"></span>
+                            </div>
+                            <div class="flex justify-between items-center text-lg font-bold border-t pt-2">
+                                <span>Total:</span>
+                                <span x-text="formatCurrency(invoiceForm.total)"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end space-x-4">
+                        <button type="button" @click="setActiveSection('invoices')" class="btn-secondary px-6 py-2 rounded-lg">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn-primary px-6 py-2 rounded-lg">
+                            Create Invoice
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Expenses Section -->
+        <div id="expenses" class="p-6" :class="activeSection === 'expenses' ? 'section-active' : 'section-hidden'">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <i data-lucide="search" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
+                        <input 
+                            type="text" 
+                            placeholder="Search expenses..." 
+                            class="input pl-10 w-64"
+                            x-model="expenseSearch"
+                        >
+                    </div>
+                </div>
+                <button @click="openExpenseModal()" class="btn-primary px-4 py-2 rounded-lg flex items-center space-x-2">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    <span>Add Expense</span>
+                </button>
+            </div>
+
+            <div class="card overflow-hidden">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Category</th>
+                            <th>Amount</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="expense in filteredExpenses" :key="expense.id">
+                            <tr>
+                                <td x-text="formatDate(expense.date)"></td>
+                                <td>
+                                    <div class="font-medium" x-text="expense.description"></div>
+                                    <div class="text-sm text-gray-500" x-text="expense.notes"></div>
+                                </td>
+                                <td x-text="expense.category"></td>
+                                <td x-text="formatCurrency(expense.amount)"></td>
+                                <td>
+                                    <div class="flex space-x-2">
+                                        <button @click="editExpense(expense)" class="p-1 hover:bg-gray-100 rounded">
+                                            <i data-lucide="edit" class="w-4 h-4"></i>
+                                        </button>
+                                        <button @click="deleteExpense(expense.id)" class="p-1 hover:bg-gray-100 rounded text-red-500">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Analytics Section -->
+        <div id="analytics" class="p-6" :class="activeSection === 'analytics' ? 'section-active' : 'section-hidden'">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold mb-4">Revenue Trend</h3>
+                    <canvas id="revenueChart" width="400" height="200"></canvas>
+                </div>
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold mb-4">Expense Breakdown</h3>
+                    <canvas id="expenseChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div id="settings" class="p-6" :class="activeSection === 'settings' ? 'section-active' : 'section-hidden'">
+            <div class="max-w-2xl mx-auto">
+                <h3 class="text-xl font-semibold mb-6">Company Settings</h3>
+                
+                <form @submit.prevent="updateSettings()">
+                    <div class="card p-6 mb-6">
+                        <h4 class="text-lg font-medium mb-4">Company Information</h4>
+                        <div class="space-y-4">
+                            <div class="form-group">
+                                <label class="form-label">Company Name</label>
+                                <input type="text" class="input w-full" x-model="settings.companyName" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Company Address</label>
+                                <textarea class="input w-full" rows="3" x-model="settings.companyAddress"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Phone</label>
+                                <input type="text" class="input w-full" x-model="settings.phone">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="input w-full" x-model="settings.email">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card p-6 mb-6">
+                        <h4 class="text-lg font-medium mb-4">Tax Settings</h4>
+                        <div class="space-y-4">
+                            <div class="form-group">
+                                <label class="form-label">GST Number</label>
+                                <input type="text" class="input w-full" x-model="settings.gstNumber">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">PAN Number</label>
+                                <input type="text" class="input w-full" x-model="settings.panNumber">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Default Tax Rate (%)</label>
+                                <input type="number" class="input w-full" x-model="settings.defaultTaxRate">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card p-6 mb-6">
+                        <h4 class="text-lg font-medium mb-4">Invoice Settings</h4>
+                        <div class="space-y-4">
+                            <div class="form-group">
+                                <label class="form-label">Invoice Prefix</label>
+                                <input type="text" class="input w-full" x-model="settings.invoicePrefix">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Default Currency</label>
+                                <select class="form-select w-full" x-model="settings.defaultCurrency">
+                                    <option value="INR">INR (₹)</option>
+                                    <option value="USD">USD ($)</option>
+                                    <option value="EUR">EUR (€)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button type="submit" class="btn-primary px-6 py-2 rounded-lg">
+                            Save Settings
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Client Modal -->
+    <div id="clientModal" class="modal" :class="{'active': showClientModal}">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold" x-text="editingClient ? 'Edit Client' : 'Add Client'"></h3>
+                <button @click="closeClientModal()" class="p-2 hover:bg-gray-100 rounded">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            
+            <form @submit.prevent="saveClient()">
+                <div class="space-y-4">
+                    <div class="form-group">
+                        <label class="form-label">Name *</label>
+                        <input type="text" class="input w-full" x-model="clientForm.name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email *</label>
+                        <input type="email" class="input w-full" x-model="clientForm.email" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone</label>
+                        <input type="text" class="input w-full" x-model="clientForm.phone">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Address</label>
+                        <textarea class="input w-full" rows="3" x-model="clientForm.address"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">GST Number</label>
+                        <input type="text" class="input w-full" x-model="clientForm.gstNumber">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">PAN Number</label>
+                        <input type="text" class="input w-full" x-model="clientForm.panNumber">
+                    </div>
+                </div>
+                
+                <div class="flex justify-end space-x-4 mt-6">
+                    <button type="button" @click="closeClientModal()" class="btn-secondary px-4 py-2 rounded-lg">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn-primary px-4 py-2 rounded-lg">
+                        <span x-text="editingClient ? 'Update' : 'Save'"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Product Modal -->
+    <div id="productModal" class="modal" :class="{'active': showProductModal}">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold" x-text="editingProduct ? 'Edit Product' : 'Add Product'"></h3>
+                <button @click="closeProductModal()" class="p-2 hover:bg-gray-100 rounded">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            
+            <form @submit.prevent="saveProduct()">
+                <div class="space-y-4">
+                    <div class="form-group">
+                        <label class="form-label">Name *</label>
+                        <input type="text" class="input w-full" x-model="productForm.name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea class="input w-full" rows="3" x-model="productForm.description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Category *</label>
+                        <input type="text" class="input w-full" x-model="productForm.category" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Price *</label>
+                        <input type="number" step="0.01" class="input w-full" x-model="productForm.price" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Unit</label>
+                        <select class="form-select w-full" x-model="productForm.unit">
+                            <option value="piece">Piece</option>
+                            <option value="kg">Kilogram</option>
+                            <option value="liter">Liter</option>
+                            <option value="hour">Hour</option>
+                            <option value="day">Day</option>
+                            <option value="month">Month</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" x-model="productForm.isService" class="mr-2">
+                            This is a service
+                        </label>
+                    </div>
+                    <div class="form-group" x-show="!productForm.isService">
+                        <label class="form-label">Stock Quantity</label>
+                        <input type="number" class="input w-full" x-model="productForm.stock">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tax Rate (%)</label>
+                        <input type="number" step="0.01" class="input w-full" x-model="productForm.taxRate">
+                    </div>
+                </div>
+                
+                <div class="flex justify-end space-x-4 mt-6">
+                    <button type="button" @click="closeProductModal()" class="btn-secondary px-4 py-2 rounded-lg">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn-primary px-4 py-2 rounded-lg">
+                        <span x-text="editingProduct ? 'Update' : 'Save'"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Expense Modal -->
+    <div id="expenseModal" class="modal" :class="{'active': showExpenseModal}">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold" x-text="editingExpense ? 'Edit Expense' : 'Add Expense'"></h3>
+                <button @click="closeExpenseModal()" class="p-2 hover:bg-gray-100 rounded">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            
+            <form @submit.prevent="saveExpense()">
+                <div class="space-y-4">
+                    <div class="form-group">
+                        <label class="form-label">Date *</label>
+                        <input type="date" class="input w-full" x-model="expenseForm.date" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description *</label>
+                        <input type="text" class="input w-full" x-model="expenseForm.description" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Category *</label>
+                        <select class="form-select w-full" x-model="expenseForm.category" required>
+                            <option value="">Select Category</option>
+                            <option value="Office Supplies">Office Supplies</option>
+                            <option value="Travel">Travel</option>
+                            <option value="Meals">Meals</option>
+                            <option value="Equipment">Equipment</option>
+                            <option value="Software">Software</option>
+                            <option value="Marketing">Marketing</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Amount *</label>
+                        <input type="number" step="0.01" class="input w-full" x-model="expenseForm.amount" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Notes</label>
+                        <textarea class="input w-full" rows="3" x-model="expenseForm.notes"></textarea>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end space-x-4 mt-6">
+                    <button type="button" @click="closeExpenseModal()" class="btn-secondary px-4 py-2 rounded-lg">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn-primary px-4 py-2 rounded-lg">
+                        <span x-text="editingExpense ? 'Update' : 'Save'"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function billMaster() {
+            return {
+                // State
+                activeSection: 'dashboard',
+                sidebarOpen: false,
+                darkMode: false,
+                
+                // Data
+                clients: [],
+                products: [],
+                invoices: [],
+                expenses: [],
+                settings: {
+                    companyName: 'BillMaster Pro',
+                    companyAddress: '123 Business Street, City, State 12345',
+                    phone: '+91 98765 43210',
+                    email: 'info@billmasterpro.com',
+                    gstNumber: '22ABCDE1234F1Z5',
+                    panNumber: 'ABCDE1234F',
+                    defaultTaxRate: 18,
+                    invoicePrefix: 'INV-',
+                    defaultCurrency: 'INR'
+                },
+                
+                // Search filters
+                clientSearch: '',
+                productSearch: '',
+                invoiceSearch: '',
+                expenseSearch: '',
+                invoiceStatusFilter: '',
+                
+                // Modal states
+                showClientModal: false,
+                showProductModal: false,
+                showExpenseModal: false,
+                editingClient: null,
+                editingProduct: null,
+                editingExpense: null,
+                
+                // Forms
+                clientForm: {
+                    name: '',
+                    email: '',
+                    phone: '',
+                    address: '',
+                    gstNumber: '',
+                    panNumber: ''
+                },
+                productForm: {
+                    name: '',
+                    description: '',
+                    category: '',
+                    price: '',
+                    unit: 'piece',
+                    stock: '',
+                    isService: false,
+                    taxRate: 18
+                },
+                expenseForm: {
+                    date: '',
+                    description: '',
+                    category: '',
+                    amount: '',
+                    notes: ''
+                },
+                invoiceForm: {
+                    billingType: 'retail',
+                    invoiceNumber: '',
+                    clientId: '',
+                    invoiceDate: '',
+                    dueDate: '',
+                    paymentTerms: '30 days',
+                    currency: 'INR',
+                    notes: '',
+                    items: [],
+                    subtotal: 0,
+                    taxAmount: 0,
+                    total: 0
+                },
+                
+                // Billing types
+                billingTypes: [
+                    { id: 'retail', name: 'Retail', description: 'Product sales with inventory', icon: 'shopping-cart' },
+                    { id: 'service', name: 'Service', description: 'Professional services billing', icon: 'user-check' },
+                    { id: 'transport', name: 'Transport', description: 'Logistics and transportation', icon: 'truck' },
+                    { id: 'travel', name: 'Travel', description: 'Travel and tourism services', icon: 'plane' },
+                    { id: 'subscription', name: 'Subscription', description: 'Recurring billing services', icon: 'refresh-cw' },
+                    { id: 'gst', name: 'GST Invoice', description: 'Tax compliant invoicing', icon: 'file-text' }
+                ],
+                
+                // Computed properties
+                get stats() {
+                    const totalRevenue = this.invoices.reduce((sum, invoice) => sum + parseFloat(invoice.total || 0), 0);
+                    const totalInvoices = this.invoices.length;
+                    const pendingPayments = this.invoices.filter(inv => inv.status === 'sent').reduce((sum, invoice) => sum + parseFloat(invoice.total || 0), 0);
+                    const totalClients = this.clients.length;
+                    
+                    const billingTypeDistribution = this.billingTypes.map(type => ({
+                        type: type.name,
+                        count: this.invoices.filter(inv => inv.billingType === type.id).length,
+                        percentage: this.invoices.length > 0 ? (this.invoices.filter(inv => inv.billingType === type.id).length / this.invoices.length * 100).toFixed(1) : 0
+                    }));
+                    
+                    const recentInvoices = this.invoices.slice(-5).reverse().map(invoice => ({
+                        ...invoice,
+                        client: this.clients.find(c => c.id === invoice.clientId)
+                    }));
+                    
+                    return {
+                        totalRevenue,
+                        totalInvoices,
+                        pendingPayments,
+                        totalClients,
+                        billingTypeDistribution,
+                        recentInvoices
+                    };
+                },
+                
+                get filteredClients() {
+                    return this.clients.filter(client => 
+                        client.name.toLowerCase().includes(this.clientSearch.toLowerCase()) ||
+                        client.email.toLowerCase().includes(this.clientSearch.toLowerCase())
+                    );
+                },
+                
+                get filteredProducts() {
+                    return this.products.filter(product => 
+                        product.name.toLowerCase().includes(this.productSearch.toLowerCase()) ||
+                        product.category.toLowerCase().includes(this.productSearch.toLowerCase())
+                    );
+                },
+                
+                get filteredInvoices() {
+                    return this.invoices.filter(invoice => {
+                        const matchesSearch = invoice.invoiceNumber.toLowerCase().includes(this.invoiceSearch.toLowerCase()) ||
+                                            (invoice.client && invoice.client.name.toLowerCase().includes(this.invoiceSearch.toLowerCase()));
+                        const matchesStatus = !this.invoiceStatusFilter || invoice.status === this.invoiceStatusFilter;
+                        return matchesSearch && matchesStatus;
+                    }).map(invoice => ({
+                        ...invoice,
+                        client: this.clients.find(c => c.id === invoice.clientId)
+                    }));
+                },
+                
+                get filteredExpenses() {
+                    return this.expenses.filter(expense => 
+                        expense.description.toLowerCase().includes(this.expenseSearch.toLowerCase()) ||
+                        expense.category.toLowerCase().includes(this.expenseSearch.toLowerCase())
+                    );
+                },
+                
+                // Methods
+                init() {
+                    this.loadData();
+                    this.setupCharts();
+                    this.setActiveSection('dashboard');
+                    
+                    // Set default dates
+                    const today = new Date().toISOString().split('T')[0];
+                    const nextMonth = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                    this.invoiceForm.invoiceDate = today;
+                    this.invoiceForm.dueDate = nextMonth;
+                    this.expenseForm.date = today;
+                    
+                    // Generate invoice number
+                    this.generateInvoiceNumber();
+                    
+                    // Initialize Lucide icons
+                    this.$nextTick(() => {
+                        lucide.createIcons();
+                    });
+                },
+                
+                loadData() {
+                    // Load from localStorage or use sample data
+                    const savedClients = localStorage.getItem('billmaster_clients');
+                    const savedProducts = localStorage.getItem('billmaster_products');
+                    const savedInvoices = localStorage.getItem('billmaster_invoices');
+                    const savedExpenses = localStorage.getItem('billmaster_expenses');
+                    const savedSettings = localStorage.getItem('billmaster_settings');
+                    
+                    this.clients = savedClients ? JSON.parse(savedClients) : this.getSampleClients();
+                    this.products = savedProducts ? JSON.parse(savedProducts) : this.getSampleProducts();
+                    this.invoices = savedInvoices ? JSON.parse(savedInvoices) : this.getSampleInvoices();
+                    this.expenses = savedExpenses ? JSON.parse(savedExpenses) : this.getSampleExpenses();
+                    
+                    if (savedSettings) {
+                        this.settings = { ...this.settings, ...JSON.parse(savedSettings) };
+                    }
+                },
+                
+                saveData() {
+                    localStorage.setItem('billmaster_clients', JSON.stringify(this.clients));
+                    localStorage.setItem('billmaster_products', JSON.stringify(this.products));
+                    localStorage.setItem('billmaster_invoices', JSON.stringify(this.invoices));
+                    localStorage.setItem('billmaster_expenses', JSON.stringify(this.expenses));
+                    localStorage.setItem('billmaster_settings', JSON.stringify(this.settings));
+                },
+                
+                getSampleClients() {
+                    return [
+                        { id: 1, name: 'Acme Corporation', email: 'contact@acme.com', phone: '+1 555-0123', address: '123 Main St, City, State 12345', gstNumber: '22ABCDE1234F1Z5', panNumber: 'ABCDE1234F' },
+                        { id: 2, name: 'Tech Solutions Inc', email: 'info@techsolutions.com', phone: '+1 555-0456', address: '456 Tech Ave, City, State 67890', gstNumber: '22FGHIJ5678K2A6', panNumber: 'FGHIJ5678K' }
+                    ];
+                },
+                
+                getSampleProducts() {
+                    return [
+                        { id: 1, name: 'Website Development', description: 'Custom website development service', category: 'Web Development', price: 50000, unit: 'project', stock: null, isService: true, taxRate: 18 },
+                        { id: 2, name: 'Mobile App Development', description: 'Native mobile app development', category: 'Mobile Development', price: 75000, unit: 'project', stock: null, isService: true, taxRate: 18 },
+                        { id: 3, name: 'Laptop Computer', description: 'High-performance laptop', category: 'Electronics', price: 65000, unit: 'piece', stock: 10, isService: false, taxRate: 18 }
+                    ];
+                },
+                
+                getSampleInvoices() {
+                    return [
+                        { id: 1, invoiceNumber: 'INV-001', clientId: 1, billingType: 'service', invoiceDate: '2025-01-01', dueDate: '2025-01-31', subtotal: 50000, taxAmount: 9000, total: 59000, status: 'paid', currency: 'INR', paymentTerms: '30 days', notes: 'Thank you for your business!' },
+                        { id: 2, invoiceNumber: 'INV-002', clientId: 2, billingType: 'retail', invoiceDate: '2025-01-05', dueDate: '2025-02-04', subtotal: 65000, taxAmount: 11700, total: 76700, status: 'sent', currency: 'INR', paymentTerms: '30 days', notes: 'Payment due within 30 days' }
+                    ];
+                },
+                
+                getSampleExpenses() {
+                    return [
+                        { id: 1, date: '2025-01-01', description: 'Office Supplies', category: 'Office Supplies', amount: 2500, notes: 'Stationery and printing materials' },
+                        { id: 2, date: '2025-01-03', description: 'Business Lunch', category: 'Meals', amount: 1200, notes: 'Client meeting at restaurant' }
+                    ];
+                },
+                
+                // Navigation
+                setActiveSection(section) {
+                    this.activeSection = section;
+                    this.sidebarOpen = false;
+                    
+                    this.$nextTick(() => {
+                        if (section === 'analytics') {
+                            this.setupCharts();
+                        }
+                        lucide.createIcons();
+                    });
+                },
+                
+                getSectionTitle() {
+                    const titles = {
+                        dashboard: 'Dashboard',
+                        clients: 'Clients',
+                        products: 'Products',
+                        invoices: 'Invoices',
+                        'invoice-create': 'Create Invoice',
+                        expenses: 'Expenses',
+                        analytics: 'Analytics',
+                        settings: 'Settings'
+                    };
+                    return titles[this.activeSection] || 'Dashboard';
+                },
+                
+                toggleDarkMode() {
+                    this.darkMode = !this.darkMode;
+                    document.documentElement.classList.toggle('dark', this.darkMode);
+                    this.showToast('Dark mode ' + (this.darkMode ? 'enabled' : 'disabled'), 'success');
+                },
+                
+                // Client operations
+                openClientModal() {
+                    this.resetClientForm();
+                    this.editingClient = null;
+                    this.showClientModal = true;
+                },
+                
+                closeClientModal() {
+                    this.showClientModal = false;
+                    this.resetClientForm();
+                },
+                
+                resetClientForm() {
+                    this.clientForm = {
+                        name: '',
+                        email: '',
+                        phone: '',
+                        address: '',
+                        gstNumber: '',
+                        panNumber: ''
+                    };
+                },
+                
+                editClient(client) {
+                    this.editingClient = client;
+                    this.clientForm = { ...client };
+                    this.showClientModal = true;
+                },
+                
+                saveClient() {
+                    if (this.editingClient) {
+                        const index = this.clients.findIndex(c => c.id === this.editingClient.id);
+                        this.clients[index] = { ...this.editingClient, ...this.clientForm };
+                        this.showToast('Client updated successfully', 'success');
+                    } else {
+                        const newClient = {
+                            id: Date.now(),
+                            ...this.clientForm
+                        };
+                        this.clients.push(newClient);
+                        this.showToast('Client added successfully', 'success');
+                    }
+                    this.saveData();
+                    this.closeClientModal();
+                },
+                
+                deleteClient(clientId) {
+                    if (confirm('Are you sure you want to delete this client?')) {
+                        this.clients = this.clients.filter(c => c.id !== clientId);
+                        this.saveData();
+                        this.showToast('Client deleted successfully', 'success');
+                    }
+                },
+                
+                // Product operations
+                openProductModal() {
+                    this.resetProductForm();
+                    this.editingProduct = null;
+                    this.showProductModal = true;
+                },
+                
+                closeProductModal() {
+                    this.showProductModal = false;
+                    this.resetProductForm();
+                },
+                
+                resetProductForm() {
+                    this.productForm = {
+                        name: '',
+                        description: '',
+                        category: '',
+                        price: '',
+                        unit: 'piece',
+                        stock: '',
+                        isService: false,
+                        taxRate: 18
+                    };
+                },
+                
+                editProduct(product) {
+                    this.editingProduct = product;
+                    this.productForm = { ...product };
+                    this.showProductModal = true;
+                },
+                
+                saveProduct() {
+                    if (this.editingProduct) {
+                        const index = this.products.findIndex(p => p.id === this.editingProduct.id);
+                        this.products[index] = { ...this.editingProduct, ...this.productForm };
+                        this.showToast('Product updated successfully', 'success');
+                    } else {
+                        const newProduct = {
+                            id: Date.now(),
+                            ...this.productForm
+                        };
+                        this.products.push(newProduct);
+                        this.showToast('Product added successfully', 'success');
+                    }
+                    this.saveData();
+                    this.closeProductModal();
+                },
+                
+                deleteProduct(productId) {
+                    if (confirm('Are you sure you want to delete this product?')) {
+                        this.products = this.products.filter(p => p.id !== productId);
+                        this.saveData();
+                        this.showToast('Product deleted successfully', 'success');
+                    }
+                },
+                
+                // Expense operations
+                openExpenseModal() {
+                    this.resetExpenseForm();
+                    this.editingExpense = null;
+                    this.showExpenseModal = true;
+                },
+                
+                closeExpenseModal() {
+                    this.showExpenseModal = false;
+                    this.resetExpenseForm();
+                },
+                
+                resetExpenseForm() {
+                    const today = new Date().toISOString().split('T')[0];
+                    this.expenseForm = {
+                        date: today,
+                        description: '',
+                        category: '',
+                        amount: '',
+                        notes: ''
+                    };
+                },
+                
+                editExpense(expense) {
+                    this.editingExpense = expense;
+                    this.expenseForm = { ...expense };
+                    this.showExpenseModal = true;
+                },
+                
+                saveExpense() {
+                    if (this.editingExpense) {
+                        const index = this.expenses.findIndex(e => e.id === this.editingExpense.id);
+                        this.expenses[index] = { ...this.editingExpense, ...this.expenseForm };
+                        this.showToast('Expense updated successfully', 'success');
+                    } else {
+                        const newExpense = {
+                            id: Date.now(),
+                            ...this.expenseForm
+                        };
+                        this.expenses.push(newExpense);
+                        this.showToast('Expense added successfully', 'success');
+                    }
+                    this.saveData();
+                    this.closeExpenseModal();
+                },
+                
+                deleteExpense(expenseId) {
+                    if (confirm('Are you sure you want to delete this expense?')) {
+                        this.expenses = this.expenses.filter(e => e.id !== expenseId);
+                        this.saveData();
+                        this.showToast('Expense deleted successfully', 'success');
+                    }
+                },
+                
+                // Invoice operations
+                generateInvoiceNumber() {
+                    const prefix = this.settings.invoicePrefix;
+                    const nextNumber = this.invoices.length + 1;
+                    this.invoiceForm.invoiceNumber = `${prefix}${nextNumber.toString().padStart(3, '0')}`;
+                },
+                
+                selectBillingType(type) {
+                    this.invoiceForm.billingType = type;
+                },
+                
+                addInvoiceItem() {
+                    this.invoiceForm.items.push({
+                        description: '',
+                        quantity: 1,
+                        rate: 0,
+                        taxRate: this.settings.defaultTaxRate,
+                        taxAmount: 0,
+                        amount: 0
+                    });
+                },
+                
+                removeInvoiceItem(index) {
+                    this.invoiceForm.items.splice(index, 1);
+                    this.calculateInvoiceTotal();
+                },
+                
+                calculateItemTotal(index) {
+                    const item = this.invoiceForm.items[index];
+                    const subtotal = parseFloat(item.quantity || 0) * parseFloat(item.rate || 0);
+                    const taxAmount = subtotal * (parseFloat(item.taxRate || 0) / 100);
+                    
+                    item.taxAmount = taxAmount.toFixed(2);
+                    item.amount = (subtotal + taxAmount).toFixed(2);
+                    
+                    this.calculateInvoiceTotal();
+                },
+                
+                calculateInvoiceTotal() {
+                    const subtotal = this.invoiceForm.items.reduce((sum, item) => {
+                        return sum + (parseFloat(item.quantity || 0) * parseFloat(item.rate || 0));
+                    }, 0);
+                    
+                    const taxAmount = this.invoiceForm.items.reduce((sum, item) => {
+                        return sum + parseFloat(item.taxAmount || 0);
+                    }, 0);
+                    
+                    this.invoiceForm.subtotal = subtotal.toFixed(2);
+                    this.invoiceForm.taxAmount = taxAmount.toFixed(2);
+                    this.invoiceForm.total = (subtotal + taxAmount).toFixed(2);
+                },
+                
+                createInvoice() {
+                    if (this.invoiceForm.items.length === 0) {
+                        this.showToast('Please add at least one item', 'error');
+                        return;
+                    }
+                    
+                    const newInvoice = {
+                        id: Date.now(),
+                        ...this.invoiceForm,
+                        status: 'draft',
+                        createdAt: new Date().toISOString()
+                    };
+                    
+                    this.invoices.push(newInvoice);
+                    this.saveData();
+                    this.showToast('Invoice created successfully', 'success');
+                    this.setActiveSection('invoices');
+                    this.resetInvoiceForm();
+                },
+                
+                resetInvoiceForm() {
+                    this.invoiceForm = {
+                        billingType: 'retail',
+                        invoiceNumber: '',
+                        clientId: '',
+                        invoiceDate: new Date().toISOString().split('T')[0],
+                        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                        paymentTerms: '30 days',
+                        currency: 'INR',
+                        notes: '',
+                        items: [],
+                        subtotal: 0,
+                        taxAmount: 0,
+                        total: 0
+                    };
+                    this.generateInvoiceNumber();
+                },
+                
+                viewInvoice(invoice) {
+                    this.showToast('Invoice preview feature coming soon', 'info');
+                },
+                
+                downloadInvoicePDF(invoice) {
+                    const client = this.clients.find(c => c.id === invoice.clientId);
+                    this.generatePDF(invoice, client);
+                },
+                
+                generatePDF(invoice, client) {
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF();
+                    
+                    // Header
+                    doc.setFontSize(20);
+                    doc.text('INVOICE', 20, 20);
+                    
+                    // Company info
+                    doc.setFontSize(12);
+                    doc.text(this.settings.companyName, 20, 35);
+                    doc.text(this.settings.companyAddress, 20, 45);
+                    doc.text(`Phone: ${this.settings.phone}`, 20, 55);
+                    doc.text(`Email: ${this.settings.email}`, 20, 65);
+                    
+                    // Invoice details
+                    doc.text(`Invoice #: ${invoice.invoiceNumber}`, 120, 35);
+                    doc.text(`Date: ${this.formatDate(invoice.invoiceDate)}`, 120, 45);
+                    doc.text(`Due Date: ${this.formatDate(invoice.dueDate)}`, 120, 55);
+                    doc.text(`Status: ${invoice.status.toUpperCase()}`, 120, 65);
+                    
+                    // Client info
+                    doc.text('Bill To:', 20, 85);
+                    doc.text(client?.name || 'Unknown Client', 20, 95);
+                    if (client?.address) doc.text(client.address, 20, 105);
+                    if (client?.phone) doc.text(`Phone: ${client.phone}`, 20, 115);
+                    if (client?.email) doc.text(`Email: ${client.email}`, 20, 125);
+                    
+                    // Items table
+                    let y = 145;
+                    doc.text('Description', 20, y);
+                    doc.text('Qty', 120, y);
+                    doc.text('Rate', 140, y);
+                    doc.text('Amount', 170, y);
+                    
+                    y += 10;
+                    doc.line(20, y, 190, y);
+                    
+                    if (invoice.items) {
+                        invoice.items.forEach(item => {
+                            y += 10;
+                            doc.text(item.description, 20, y);
+                            doc.text(item.quantity.toString(), 120, y);
+                            doc.text(this.formatCurrency(item.rate), 140, y);
+                            doc.text(this.formatCurrency(item.amount), 170, y);
+                        });
+                    }
+                    
+                    // Totals
+                    y += 20;
+                    doc.text(`Subtotal: ${this.formatCurrency(invoice.subtotal)}`, 120, y);
+                    y += 10;
+                    doc.text(`Tax: ${this.formatCurrency(invoice.taxAmount)}`, 120, y);
+                    y += 10;
+                    doc.setFontSize(14);
+                    doc.text(`Total: ${this.formatCurrency(invoice.total)}`, 120, y);
+                    
+                    // Footer
+                    if (invoice.notes) {
+                        y += 20;
+                        doc.setFontSize(10);
+                        doc.text('Notes:', 20, y);
+                        doc.text(invoice.notes, 20, y + 10);
+                    }
+                    
+                    doc.save(`${invoice.invoiceNumber}.pdf`);
+                    this.showToast('PDF downloaded successfully', 'success');
+                },
+                
+                deleteInvoice(invoiceId) {
+                    if (confirm('Are you sure you want to delete this invoice?')) {
+                        this.invoices = this.invoices.filter(i => i.id !== invoiceId);
+                        this.saveData();
+                        this.showToast('Invoice deleted successfully', 'success');
+                    }
+                },
+                
+                // Settings
+                updateSettings() {
+                    this.saveData();
+                    this.showToast('Settings updated successfully', 'success');
+                },
+                
+                // Charts
+                setupCharts() {
+                    this.$nextTick(() => {
+                        this.setupBillingChart();
+                        this.setupRevenueChart();
+                        this.setupExpenseChart();
+                    });
+                },
+                
+                setupBillingChart() {
+                    const ctx = document.getElementById('billingChart');
+                    if (!ctx) return;
+                    
+                    new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: this.stats.billingTypeDistribution.map(item => item.type),
+                            datasets: [{
+                                data: this.stats.billingTypeDistribution.map(item => item.count),
+                                backgroundColor: [
+                                    '#3b82f6',
+                                    '#10b981',
+                                    '#f59e0b',
+                                    '#ef4444',
+                                    '#8b5cf6',
+                                    '#06b6d4'
+                                ]
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            }
+                        }
+                    });
+                },
+                
+                setupRevenueChart() {
+                    const ctx = document.getElementById('revenueChart');
+                    if (!ctx) return;
+                    
+                    // Sample data for revenue trend
+                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+                    const revenue = [45000, 52000, 48000, 61000, 55000, 67000];
+                    
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: months,
+                            datasets: [{
+                                label: 'Revenue',
+                                data: revenue,
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                },
+                
+                setupExpenseChart() {
+                    const ctx = document.getElementById('expenseChart');
+                    if (!ctx) return;
+                    
+                    // Group expenses by category
+                    const expensesByCategory = this.expenses.reduce((acc, expense) => {
+                        acc[expense.category] = (acc[expense.category] || 0) + parseFloat(expense.amount);
+                        return acc;
+                    }, {});
+                    
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: Object.keys(expensesByCategory),
+                            datasets: [{
+                                label: 'Expenses',
+                                data: Object.values(expensesByCategory),
+                                backgroundColor: '#10b981'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                },
+                
+                // Utility functions
+                formatCurrency(amount) {
+                    const num = parseFloat(amount) || 0;
+                    return new Intl.NumberFormat('en-IN', {
+                        style: 'currency',
+                        currency: 'INR',
+                        minimumFractionDigits: 0
+                    }).format(num);
+                },
+                
+                formatDate(date) {
+                    return new Date(date).toLocaleDateString('en-IN');
+                },
+                
+                getBadgeClass(status) {
+                    const classes = {
+                        draft: 'badge-draft',
+                        sent: 'badge-sent',
+                        paid: 'badge-paid',
+                        overdue: 'badge-overdue'
+                    };
+                    return classes[status] || 'badge-draft';
+                },
+                
+                showToast(message, type = 'info') {
+                    const toast = document.getElementById('toast');
+                    const messageEl = document.getElementById('toast-message');
+                    
+                    messageEl.textContent = message;
+                    toast.className = `toast ${type} active`;
+                    
+                    setTimeout(() => {
+                        toast.classList.remove('active');
+                    }, 3000);
+                }
+            };
+        }
+    </script>
+</body>
+</html>
